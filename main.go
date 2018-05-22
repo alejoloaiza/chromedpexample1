@@ -3,22 +3,17 @@ package main
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"time"
 
 	"github.com/chromedp/cdproto/cdp"
-	//"github.com/chromedp/cdproto/emulation"
 	"github.com/chromedp/chromedp"
-
-	chrome "github.com/mkenney/go-chrome/tot"
-	"github.com/mkenney/go-chrome/tot/cdtp/emulation"
-	"github.com/mkenney/go-chrome/tot/cdtp/page"
+	"github.com/chromedp/chromedp/runner"
 )
 
-func main2() {
+func main() {
 	var err error
 
 	// create context
@@ -26,15 +21,19 @@ func main2() {
 	defer cancel()
 
 	// create chrome instance
-	c, err := chromedp.New(ctxt, chromedp.WithLog(log.Printf))
+	c, err := chromedp.New(ctxt, chromedp.WithLog(log.Printf), chromedp.WithRunnerOptions(
+		runner.Flag("headless", true),
+		runner.Flag("disable-gpu", true),
+		runner.Flag("no-first-run", true),
+		runner.Flag("no-default-browser-check", true),
+		runner.Port(9222),
+	))
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// run task list
-	var site, res string
-	//err = c.Run(ctxt, googleSearch("site:brank.as", "Home", &site, &res))
-	err = c.Run(ctxt, skyscannerSearch())
+	err = c.Run(ctxt, screenshot(`https://brank.as/`, `#mobile-menu`))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -50,28 +49,32 @@ func main2() {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
 
-	log.Printf("saved screenshot from search result listing `%s` (%s)", res, site)
+func screenshot(urlstr, sel string) chromedp.Tasks {
+	var buf []byte
+	return chromedp.Tasks{
+		chromedp.Navigate(urlstr),
+		chromedp.Sleep(5 * time.Second),
+		chromedp.WaitVisible(sel, chromedp.ByID),
+		chromedp.Screenshot(sel, &buf, chromedp.ByID),
+		chromedp.ActionFunc(func(context.Context, cdp.Executor) error {
+			return ioutil.WriteFile("screenshot.png", buf, 0644)
+		}),
+	}
 }
 
 func googleSearch(q, text string, site, res *string) chromedp.Tasks {
 	var buf []byte
 	sel := fmt.Sprintf(`//a[text()[contains(., '%s')]]`, text)
-	fmt.Println(sel)
-	fmt.Println("=======================")
 	return chromedp.Tasks{
 		chromedp.Navigate(`https://www.google.com`),
-		chromedp.WaitVisible(`span.fqs-price`, chromedp.ByID),
+		chromedp.WaitVisible(`#hplogo`, chromedp.ByID),
 		chromedp.SendKeys(`#lst-ib`, q+"\n", chromedp.ByID),
 		chromedp.WaitVisible(`#res`, chromedp.ByID),
 		chromedp.Text(sel, res),
 		chromedp.Click(sel),
-		chromedp.WaitNotVisible(`.preloader-content`, chromedp.ByQuery),
-		chromedp.WaitVisible(`a[href*="twitter"]`, chromedp.ByQuery),
-		chromedp.Location(site),
-		chromedp.ScrollIntoView(`.banner-section.third-section`, chromedp.ByQuery),
-		chromedp.Sleep(2 * time.Second), // wait for animation to finish
-		chromedp.Screenshot(`.banner-section.third-section`, &buf, chromedp.ByQuery),
+		chromedp.Screenshot(`h1.fade-up`, &buf, chromedp.ByQuery),
 		chromedp.ActionFunc(func(context.Context, cdp.Executor) error {
 			return ioutil.WriteFile("screenshot.png", buf, 0644)
 		}),
@@ -93,7 +96,8 @@ func skyscannerSearch() chromedp.Tasks {
 	}
 }
 
-func main() {
+/*
+func main2() {
 	var err error
 
 	// Define a chrome instance with remote debugging enabled.
@@ -203,3 +207,4 @@ func main() {
 
 	fmt.Println("Finished rendering example.jpg")
 }
+*/

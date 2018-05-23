@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"strconv"
 	"time"
 
 	"github.com/chromedp/cdproto/cdp"
@@ -22,7 +23,7 @@ func main() {
 
 	// create chrome instance
 	c, err := chromedp.New(ctxt, chromedp.WithLog(log.Printf), chromedp.WithRunnerOptions(
-		runner.Flag("headless", true),
+		//runner.Flag("headless", true),
 		runner.Flag("disable-gpu", true),
 		runner.Flag("no-first-run", true),
 		runner.Flag("no-default-browser-check", true),
@@ -31,14 +32,27 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	// run task list
-	err = c.Run(ctxt, screenshot(`https://brank.as/`, `#mobile-menu`))
+	var best, cheaper, fastest string
+	mydate := "180801"
+	var url = getNewUrl(&mydate)
+	err = c.Run(ctxt, skyscannerSearch(url, &best, &cheaper, &fastest))
 	if err != nil {
 		log.Fatal(err)
 	}
+	fmt.Println("EXTRACTION 1: " + best)
+	fmt.Println("EXTRACTION 2: " + cheaper)
+	fmt.Println("EXTRACTION 3: " + fastest)
 
-	// shutdown chrome
+	url = getNewUrl(&mydate)
+	err = c.Run(ctxt, skyscannerSearch(url, &best, &cheaper, &fastest))
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("EXTRACTION 1: " + best)
+	fmt.Println("EXTRACTION 2: " + cheaper)
+	fmt.Println("EXTRACTION 3: " + fastest)
+
+	// sutdown chrome
 	err = c.Shutdown(ctxt)
 	if err != nil {
 		log.Fatal(err)
@@ -50,7 +64,17 @@ func main() {
 		log.Fatal(err)
 	}
 }
+func getNewUrl(basenum *string) string {
+	var base int
+	base, _ = strconv.Atoi(*basenum)
+	base++
+	*basenum = strconv.Itoa(base)
 
+	url := fmt.Sprintf(`https://www.skyscanner.net/transport/flights/mdea/syda/%s/?adults=1&children=0&adultsv2=1&childrenv2=&infants=0&cabinclass=economy&rtn=0&preferdirects=false&outboundaltsenabled=false&inboundaltsenabled=false&ref=home#results`, *basenum)
+
+	return url
+
+}
 func screenshot(urlstr, sel string) chromedp.Tasks {
 	var buf []byte
 	return chromedp.Tasks{
@@ -80,24 +104,30 @@ func googleSearch(q, text string, site, res *string) chromedp.Tasks {
 		}),
 	}
 }
-func skyscannerSearch() chromedp.Tasks {
-	var buf []byte
+func skyscannerSearch(url string, best *string, cheapest *string, fastest *string) chromedp.Tasks {
+	//var buf []byte
 	return chromedp.Tasks{
-		chromedp.Navigate(`https://www.skyscanner.net/transport/flights/mdea/syda/180801/?adults=1&children=0&adultsv2=1&childrenv2=&infants=0&cabinclass=economy&rtn=0&preferdirects=false&outboundaltsenabled=false&inboundaltsenabled=false&ref=home#results`),
-		chromedp.WaitVisible(`span.fqs-price`),
+		chromedp.Navigate(url),
+		//chromedp.WaitVisible(`td.tab.active`),
+		chromedp.Sleep(15 * time.Second),
+		//chromedp.WaitVisible(`#fqs-tabs > table > tbody > tr > td.tab.active`),
+		//chromedp.WaitNotVisible(`span.progress-spinner.hot-spinner`),
 		chromedp.ActionFunc(func(context.Context, cdp.Executor) error {
 			log.Printf(">>>>>>>>>>>>>>>>>>>> BOX1 IS VISIBLE")
 			return nil
 		}),
-		chromedp.Screenshot(`span.fqs-price`, &buf, chromedp.ByQuery),
+		chromedp.Text(`#fqs-tabs > table > tbody > tr > td.tab.active`, best, chromedp.NodeVisible, chromedp.ByID),
+		chromedp.Text(`#fqs-tabs > table > tbody > tr > td:nth-child(2)`, cheapest, chromedp.NodeVisible, chromedp.ByID),
+		chromedp.Text(`#fqs-tabs > table > tbody > tr > td:nth-child(3)`, fastest, chromedp.NodeVisible, chromedp.ByID),
+		/*chromedp.Screenshot(`td.tab.active`, &buf, chromedp.ByQuery),
 		chromedp.ActionFunc(func(context.Context, cdp.Executor) error {
 			return ioutil.WriteFile("screenshot.png", buf, 0644)
-		}),
+		}),*/
 	}
 }
 
 /*
-func main2() {
+func main() {
 	var err error
 
 	// Define a chrome instance with remote debugging enabled.

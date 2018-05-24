@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"strconv"
+	"os"
 	"time"
 
 	"github.com/chromedp/cdproto/cdp"
@@ -35,23 +35,26 @@ func main() {
 	var best, cheaper, fastest string
 	mydate := "180801"
 	var url = getNewUrl(&mydate)
+
+	WriteResults("URL IS " + url)
+	//goto fin
 	err = c.Run(ctxt, skyscannerSearch(url, &best, &cheaper, &fastest))
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("EXTRACTION 1: " + best)
-	fmt.Println("EXTRACTION 2: " + cheaper)
-	fmt.Println("EXTRACTION 3: " + fastest)
 
+	newline := fmt.Sprintf("EXTRACTION 1: BEST %s CHEAP %s FAST %s \n", best, cheaper, fastest)
+	WriteResults(newline)
 	url = getNewUrl(&mydate)
+	WriteResults("URL IS " + url)
+
 	err = c.Run(ctxt, skyscannerSearch(url, &best, &cheaper, &fastest))
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("EXTRACTION 1: " + best)
-	fmt.Println("EXTRACTION 2: " + cheaper)
-	fmt.Println("EXTRACTION 3: " + fastest)
 
+	newline = fmt.Sprintf("EXTRACTION 2: BEST %s CHEAP %s FAST %s \n", best, cheaper, fastest)
+	WriteResults(newline)
 	// sutdown chrome
 	err = c.Shutdown(ctxt)
 	if err != nil {
@@ -63,17 +66,29 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	//fin:
 }
 func getNewUrl(basenum *string) string {
-	var base int
-	base, _ = strconv.Atoi(*basenum)
-	base++
-	*basenum = strconv.Itoa(base)
+	const shortForm = "060102"
+	t, _ := time.Parse(shortForm, *basenum)
+	t = t.Add(time.Hour * 24)
+	*basenum = t.Format(shortForm)
 
 	url := fmt.Sprintf(`https://www.skyscanner.net/transport/flights/mdea/syda/%s/?adults=1&children=0&adultsv2=1&childrenv2=&infants=0&cabinclass=economy&rtn=0&preferdirects=false&outboundaltsenabled=false&inboundaltsenabled=false&ref=home#results`, *basenum)
 
 	return url
-
+}
+func WriteResults(line string) {
+	f, err := os.OpenFile("results.txt", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+	newline := line + string('\n')
+	_, err = f.WriteString(newline)
+	if err != nil {
+		panic(err)
+	}
 }
 func screenshot(urlstr, sel string) chromedp.Tasks {
 	var buf []byte
@@ -88,29 +103,13 @@ func screenshot(urlstr, sel string) chromedp.Tasks {
 	}
 }
 
-func googleSearch(q, text string, site, res *string) chromedp.Tasks {
-	var buf []byte
-	sel := fmt.Sprintf(`//a[text()[contains(., '%s')]]`, text)
-	return chromedp.Tasks{
-		chromedp.Navigate(`https://www.google.com`),
-		chromedp.WaitVisible(`#hplogo`, chromedp.ByID),
-		chromedp.SendKeys(`#lst-ib`, q+"\n", chromedp.ByID),
-		chromedp.WaitVisible(`#res`, chromedp.ByID),
-		chromedp.Text(sel, res),
-		chromedp.Click(sel),
-		chromedp.Screenshot(`h1.fade-up`, &buf, chromedp.ByQuery),
-		chromedp.ActionFunc(func(context.Context, cdp.Executor) error {
-			return ioutil.WriteFile("screenshot.png", buf, 0644)
-		}),
-	}
-}
 func skyscannerSearch(url string, best *string, cheapest *string, fastest *string) chromedp.Tasks {
 	//var buf []byte
 	return chromedp.Tasks{
 		chromedp.Navigate(url),
 		//chromedp.WaitVisible(`td.tab.active`),
-		chromedp.Sleep(15 * time.Second),
-		//chromedp.WaitVisible(`#fqs-tabs > table > tbody > tr > td.tab.active`),
+		//chromedp.Sleep(15 * time.Second),
+		chromedp.WaitVisible(`#fqs-tabs > table > tbody > tr > td.tab.active`),
 		//chromedp.WaitNotVisible(`span.progress-spinner.hot-spinner`),
 		chromedp.ActionFunc(func(context.Context, cdp.Executor) error {
 			log.Printf(">>>>>>>>>>>>>>>>>>>> BOX1 IS VISIBLE")

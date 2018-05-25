@@ -57,13 +57,15 @@ func InitCapture(logpath string, initdate string, enddate string) {
 	}
 }
 func skyscannerSearch(url string, best *string, cheapest *string, fastest *string) chromedp.Tasks {
-	//var buf []byte
-	//var results string = ""
+
+	sel := fmt.Sprintf(`//span[text()[contains(., '%s')]]`, "results sorted by")
+
 	return chromedp.Tasks{
 		chromedp.Navigate(url),
 
-		chromedp.WaitVisible(`#fqs-tabs > table > tbody > tr > td.tab.active`),
-		chromedp.WaitVisible(`#header-list-count > div > span > strong > span`),
+		//chromedp.WaitVisible(`#fqs-tabs > table > tbody > tr > td.tab.active`),
+
+		chromedp.WaitVisible(sel),
 		//chromedp.Text(`#header-list-count > div > span`, &results, nil, chromedp.ByID),
 		//chromedp.Sleep(3 * time.Second),//*[@id="header-list-count"]/div/span/strong/span//*[@id="header-list-count"]/div/span/strong/span
 		chromedp.Text(`#fqs-tabs > table > tbody > tr > td.tab.active`, best, chromedp.NodeVisible, chromedp.ByID),
@@ -81,7 +83,8 @@ func getNewUrl(basenum *string) string {
 	t = t.Add(time.Hour * 24)
 	*basenum = t.Format(shortForm)
 
-	url := fmt.Sprintf(`https://www.skyscanner.net/transport/flights/mdea/syda/%s/?currency=USD&adults=1&children=0&adultsv2=1&childrenv2=&infants=0&cabinclass=economy&rtn=0&preferdirects=false&outboundaltsenabled=false&inboundaltsenabled=false&ref=home#results`, *basenum)
+	//url := fmt.Sprintf(`https://www.skyscanner.net/transport/flights/mdea/syda/%s/?currency=USD&adults=1&children=0&adultsv2=1&childrenv2=&infants=0&cabinclass=economy&rtn=0&preferdirects=false&outboundaltsenabled=false&inboundaltsenabled=false&ref=home#results`, *basenum)
+	url := fmt.Sprintf(`https://www.skyscanner.net/transport/flights/mdea/ytoa/%s/?currency=USD&adults=1&children=0&adultsv2=1&childrenv2=&infants=0&cabinclass=economy&rtn=0&preferdirects=false&outboundaltsenabled=false&inboundaltsenabled=false&ref=home#results`, *basenum)
 
 	return url
 }

@@ -11,8 +11,8 @@ import (
 )
 
 func main() {
-	//SplitPrices("Best$1,210 33h 44")
-	InitCapture("results.csv", "180801", "180803")
+	//SplitPrices("Best$1.21033h 44")
+	InitCapture("results.csv", "180718", "180909")
 }
 
 func screenshot(urlstr, sel string) chromedp.Tasks {

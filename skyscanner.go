@@ -42,7 +42,7 @@ func InitCapture(logpath string, initdate string, enddate string) {
 		price1, duration1 := SplitPrices(best)
 		price2, duration2 := SplitPrices(cheaper)
 		price3, duration3 := SplitPrices(fastest)
-		newline := fmt.Sprintf("%s;%d;%s;%s;%s;%s;%s;%s;%s", time.Now().String(), cycle, initdate, price1, duration1, price2, duration2, price3, duration3)
+		newline := fmt.Sprintf("%s;%d;%s;%s;%s;%s;%s;%s;%s", time.Now().Format("02-01-2006 15:04:05"), cycle, initdate, price1, duration1, price2, duration2, price3, duration3)
 		WriteResults(logpath, newline)
 
 	}

@@ -12,7 +12,7 @@ func SplitPrices(input string) (string, string) {
 	splitted := strings.Split(input, "$")
 	lastpart := splitted[1]
 	price := strings.Split(lastpart, " ")
-	fmt.Println(price[0], strings.Join(price[1:], " "))
+	//fmt.Println(price[0], strings.Join(price[1:], " "))
 	return price[0], strings.Join(price[1:], " ")
 }
 

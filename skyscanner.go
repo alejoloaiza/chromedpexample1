@@ -7,10 +7,11 @@ import (
 	"os"
 	"time"
 
-	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/chromedp"
 	"github.com/chromedp/chromedp/runner"
 )
+
+const shortForm = "060102"
 
 func InitCapture(logpath string, initdate string, enddate string) {
 	var err error
@@ -30,6 +31,7 @@ func InitCapture(logpath string, initdate string, enddate string) {
 	if err != nil {
 		log.Fatal(err)
 	}
+	WriteResults(logpath, "Time;Iteration;Date;Best;best Time;Cheapest;Cheapest Time;Fastest;Fastest Time")
 	for initdate != enddate {
 		cycle++
 		var url = getNewUrl(&initdate)
@@ -37,8 +39,10 @@ func InitCapture(logpath string, initdate string, enddate string) {
 		if err != nil {
 			log.Fatal(err)
 		}
-
-		newline := fmt.Sprintf("EXTRACTION %d: BEST %s CHEAP %s FAST %s \n", cycle, best, cheaper, fastest)
+		price1, duration1 := SplitPrices(best)
+		price2, duration2 := SplitPrices(cheaper)
+		price3, duration3 := SplitPrices(fastest)
+		newline := fmt.Sprintf("%s;%d;%s;%s;%s;%s;%s;%s;%s", time.Now().String(), cycle, initdate, price1, duration1, price2, duration2, price3, duration3)
 		WriteResults(logpath, newline)
 
 	}
@@ -54,17 +58,14 @@ func InitCapture(logpath string, initdate string, enddate string) {
 }
 func skyscannerSearch(url string, best *string, cheapest *string, fastest *string) chromedp.Tasks {
 	//var buf []byte
+	//var results string = ""
 	return chromedp.Tasks{
 		chromedp.Navigate(url),
-		//chromedp.WaitVisible(`td.tab.active`),
-		//chromedp.Sleep(15 * time.Second),
+
 		chromedp.WaitVisible(`#fqs-tabs > table > tbody > tr > td.tab.active`),
-		//chromedp.WaitNotVisible(`span.progress-spinner.hot-spinner`),
-		chromedp.ActionFunc(func(context.Context, cdp.Executor) error {
-			log.Printf(">>>>>>>>>>>>>>>>>>>> BOX1 IS VISIBLE")
-			return nil
-		}),
-		//chromedp.Sleep(3 * time.Second),
+		chromedp.WaitVisible(`#header-list-count > div > span > strong > span`),
+		//chromedp.Text(`#header-list-count > div > span`, &results, nil, chromedp.ByID),
+		//chromedp.Sleep(3 * time.Second),//*[@id="header-list-count"]/div/span/strong/span//*[@id="header-list-count"]/div/span/strong/span
 		chromedp.Text(`#fqs-tabs > table > tbody > tr > td.tab.active`, best, chromedp.NodeVisible, chromedp.ByID),
 		chromedp.Text(`#fqs-tabs > table > tbody > tr > td:nth-child(2)`, cheapest, chromedp.NodeVisible, chromedp.ByID),
 		chromedp.Text(`#fqs-tabs > table > tbody > tr > td:nth-child(3)`, fastest, chromedp.NodeVisible, chromedp.ByID),
@@ -75,12 +76,12 @@ func skyscannerSearch(url string, best *string, cheapest *string, fastest *strin
 	}
 }
 func getNewUrl(basenum *string) string {
-	const shortForm = "060102"
+
 	t, _ := time.Parse(shortForm, *basenum)
 	t = t.Add(time.Hour * 24)
 	*basenum = t.Format(shortForm)
 
-	url := fmt.Sprintf(`https://www.skyscanner.net/transport/flights/mdea/syda/%s/?adults=1&children=0&adultsv2=1&childrenv2=&infants=0&cabinclass=economy&rtn=0&preferdirects=false&outboundaltsenabled=false&inboundaltsenabled=false&ref=home#results`, *basenum)
+	url := fmt.Sprintf(`https://www.skyscanner.net/transport/flights/mdea/syda/%s/?currency=USD&adults=1&children=0&adultsv2=1&childrenv2=&infants=0&cabinclass=economy&rtn=0&preferdirects=false&outboundaltsenabled=false&inboundaltsenabled=false&ref=home#results`, *basenum)
 
 	return url
 }

@@ -3,7 +3,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"io/ioutil"
 	"time"
 
@@ -12,11 +11,8 @@ import (
 )
 
 func main() {
-	fmt.Println("Iniciando")
-	InitCapture("results.txt", "180801", "180803")
-	fmt.Println("Termino")
-
-	//fin:
+	SplitPrices("Best$1,210 33h 44")
+	//InitCapture("results.csv", "180801", "180803")
 }
 
 func screenshot(urlstr, sel string) chromedp.Tasks {

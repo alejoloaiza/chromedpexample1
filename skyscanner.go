@@ -12,6 +12,7 @@ import (
 )
 
 const shortForm = "060102"
+const baseUrl = `https://www.skyscanner.net/transport/flights/%s/%s/%s/?currency=USD&adults=1&children=0&adultsv2=1&childrenv2=&infants=0&cabinclass=economy&rtn=0&preferdirects=false&outboundaltsenabled=false&inboundaltsenabled=false&ref=home#results`
 
 func InitCapture(logpath string, initdate string, enddate string, origin string, dest string) {
 	var err error
@@ -83,8 +84,7 @@ func getNewUrl(basenum *string, origin string, dest string) string {
 	t = t.Add(time.Hour * 24)
 	*basenum = t.Format(shortForm)
 
-	url := fmt.Sprintf(`https://www.skyscanner.net/transport/flights/%s/%s/%s/?currency=USD&adults=1&children=0&adultsv2=1&childrenv2=&infants=0&cabinclass=economy&rtn=0&preferdirects=false&outboundaltsenabled=false&inboundaltsenabled=false&ref=home#results`, origin, dest, *basenum)
-	//url := fmt.Sprintf(`https://www.skyscanner.net/transport/flights/ytoa/mdea/%s/?currency=USD&adults=1&children=0&adultsv2=1&childrenv2=&infants=0&cabinclass=economy&rtn=0&preferdirects=false&outboundaltsenabled=false&inboundaltsenabled=false&ref=home#results`, *basenum)
+	url := fmt.Sprintf(baseUrl, origin, dest, *basenum)
 
 	return url
 }

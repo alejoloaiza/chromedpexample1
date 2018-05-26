@@ -12,7 +12,12 @@ import (
 
 func main() {
 	//SplitPrices("Best$1.21033h 44")
-	InitCapture("results.csv", "180718", "180909")
+	var startdate, enddate, origin, destination string
+	startdate = "181001"
+	enddate = "181231"
+	origin = "mdea"
+	destination = "syda"
+	InitCapture("results.csv", startdate, enddate, origin, destination)
 }
 
 func screenshot(urlstr, sel string) chromedp.Tasks {

@@ -13,7 +13,7 @@ import (
 
 const shortForm = "060102"
 
-func InitCapture(logpath string, initdate string, enddate string) {
+func InitCapture(logpath string, initdate string, enddate string, origin string, dest string) {
 	var err error
 	var cycle int
 	var best, cheaper, fastest string
@@ -34,7 +34,7 @@ func InitCapture(logpath string, initdate string, enddate string) {
 	WriteResults(logpath, "Time;Iteration;Date;Best;best Time;Cheapest;Cheapest Time;Fastest;Fastest Time")
 	for initdate != enddate {
 		cycle++
-		var url = getNewUrl(&initdate)
+		var url = getNewUrl(&initdate, origin, dest)
 		err = c.Run(ctxt, skyscannerSearch(url, &best, &cheaper, &fastest))
 		if err != nil {
 			log.Fatal(err)
@@ -77,14 +77,14 @@ func skyscannerSearch(url string, best *string, cheapest *string, fastest *strin
 		}),*/
 	}
 }
-func getNewUrl(basenum *string) string {
+func getNewUrl(basenum *string, origin string, dest string) string {
 
 	t, _ := time.Parse(shortForm, *basenum)
 	t = t.Add(time.Hour * 24)
 	*basenum = t.Format(shortForm)
 
-	//url := fmt.Sprintf(`https://www.skyscanner.net/transport/flights/mdea/syda/%s/?currency=USD&adults=1&children=0&adultsv2=1&childrenv2=&infants=0&cabinclass=economy&rtn=0&preferdirects=false&outboundaltsenabled=false&inboundaltsenabled=false&ref=home#results`, *basenum)
-	url := fmt.Sprintf(`https://www.skyscanner.net/transport/flights/mdea/ytoa/%s/?currency=USD&adults=1&children=0&adultsv2=1&childrenv2=&infants=0&cabinclass=economy&rtn=0&preferdirects=false&outboundaltsenabled=false&inboundaltsenabled=false&ref=home#results`, *basenum)
+	url := fmt.Sprintf(`https://www.skyscanner.net/transport/flights/%s/%s/%s/?currency=USD&adults=1&children=0&adultsv2=1&childrenv2=&infants=0&cabinclass=economy&rtn=0&preferdirects=false&outboundaltsenabled=false&inboundaltsenabled=false&ref=home#results`, origin, dest, *basenum)
+	//url := fmt.Sprintf(`https://www.skyscanner.net/transport/flights/ytoa/mdea/%s/?currency=USD&adults=1&children=0&adultsv2=1&childrenv2=&infants=0&cabinclass=economy&rtn=0&preferdirects=false&outboundaltsenabled=false&inboundaltsenabled=false&ref=home#results`, *basenum)
 
 	return url
 }

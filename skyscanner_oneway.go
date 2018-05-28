@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
 	"time"
 
 	"github.com/chromedp/chromedp"
@@ -16,9 +15,9 @@ const currency = "USD"
 const adults = "1"
 const children = "0"
 const cabinclass = "economy"
-const baseUrl = `https://www.skyscanner.net/transport/flights/%s/%s/%s/?currency=%s&adults=%s&children=%s&adultsv2=%s&childrenv2=&infants=0&cabinclass=%s&rtn=0&preferdirects=false&outboundaltsenabled=false&inboundaltsenabled=false&ref=home#results`
+const baseUrlOneWay = `https://www.skyscanner.net/transport/flights/%s/%s/%s/?currency=%s&adults=%s&children=%s&adultsv2=%s&childrenv2=&infants=0&cabinclass=%s&rtn=0&preferdirects=false&outboundaltsenabled=false&inboundaltsenabled=false&ref=home#results`
 
-func InitCapture(logpath string, initdate string, enddate string, origin string, dest string) {
+func InitCaptureOneWay(logpath string, initdate string, enddate string, origin string, dest string) {
 	var err error
 	var cycle int
 	var best, cheaper, fastest string
@@ -40,8 +39,8 @@ func InitCapture(logpath string, initdate string, enddate string, origin string,
 	WriteResults(logpath, "Time;Iteration;Date;Best;Best Time;Cheapest;Cheapest Time;Fastest;Fastest Time")
 	for initdate != enddate {
 		cycle++
-		var url = getNewUrl(&initdate, origin, dest)
-		err = c.Run(ctxt, skyscannerSearch(url, &best, &cheaper, &fastest))
+		var url = getNewUrlOneWay(&initdate, origin, dest)
+		err = c.Run(ctxt, skyscannerSearchOneWay(url, &best, &cheaper, &fastest))
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -62,7 +61,7 @@ func InitCapture(logpath string, initdate string, enddate string, origin string,
 		log.Fatal(err)
 	}
 }
-func skyscannerSearch(url string, best *string, cheapest *string, fastest *string) chromedp.Tasks {
+func skyscannerSearchOneWay(url string, best *string, cheapest *string, fastest *string) chromedp.Tasks {
 
 	sel := fmt.Sprintf(`//span[text()[contains(., '%s')]]`, "results sorted by")
 	//var buf []byte
@@ -88,25 +87,13 @@ func skyscannerSearch(url string, best *string, cheapest *string, fastest *strin
 		}),*/
 	}
 }
-func getNewUrl(basenum *string, origin string, dest string) string {
+func getNewUrlOneWay(basenum *string, origin string, dest string) string {
 
 	t, _ := time.Parse(shortForm, *basenum)
 	t = t.Add(time.Hour * 24)
 	*basenum = t.Format(shortForm)
 
-	url := fmt.Sprintf(baseUrl, origin, dest, *basenum, currency, adults, children, adults, cabinclass)
+	url := fmt.Sprintf(baseUrlOneWay, origin, dest, *basenum, currency, adults, children, adults, cabinclass)
 
 	return url
-}
-func WriteResults(logpath string, line string) {
-	f, err := os.OpenFile(logpath, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
-	if err != nil {
-		panic(err)
-	}
-	defer f.Close()
-	newline := line + string('\n')
-	_, err = f.WriteString(newline)
-	if err != nil {
-		panic(err)
-	}
 }

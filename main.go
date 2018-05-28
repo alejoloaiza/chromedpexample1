@@ -32,5 +32,5 @@ func main() {
 		logpath = "results.csv"
 	}
 
-	InitCapture(logpath, startdate, enddate, origin, destination)
+	InitCaptureOneWay(logpath, startdate, enddate, origin, destination)
 }

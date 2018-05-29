@@ -12,8 +12,11 @@ import (
 
 //const baseUrlReturn = `https://www.skyscanner.net/transport/flights/%s/%s/%s/?currency=%s&adults=%s&children=%s&adultsv2=%s&childrenv2=&infants=0&cabinclass=%s&rtn=0&preferdirects=false&outboundaltsenabled=false&inboundaltsenabled=false&ref=home#results`
 const baseUrlReturn = `https://www.skyscanner.net/transport/flights/%s/%s/%s/%s/?currency=%s&adults=%s&children=%s&adultsv2=%s&childrenv2=&infants=0&cabinclass=%s&rtn=1&preferdirects=false&outboundaltsenabled=false&inboundaltsenabled=false&ref=home#results`
+const daystomove = 5
 
-func InitCaptureReturn(logpath string, initdate string, enddate string, origin string, dest string) {
+var movearray [daystomove]int
+
+func InitCaptureReturn(logpath string, initdate string, enddate string, duration int, origin string, dest string) {
 	var err error
 	var cycle int
 	var best, cheaper, fastest string
@@ -35,7 +38,7 @@ func InitCaptureReturn(logpath string, initdate string, enddate string, origin s
 	WriteResults(logpath, "Time;Iteration;Date;Best;Best Time;Cheapest;Cheapest Time;Fastest;Fastest Time")
 	for initdate != enddate {
 		cycle++
-		var url = getNewUrlReturn(&initdate, origin, dest)
+		var url = getNewUrlReturn(&initdate, &enddate, origin, dest, duration)
 		err = c.Run(ctxt, skyscannerSearchReturn(url, &best, &cheaper, &fastest))
 		if err != nil {
 			log.Fatal(err)
@@ -57,6 +60,7 @@ func InitCaptureReturn(logpath string, initdate string, enddate string, origin s
 		log.Fatal(err)
 	}
 }
+
 func skyscannerSearchReturn(url string, best *string, cheapest *string, fastest *string) chromedp.Tasks {
 
 	sel := fmt.Sprintf(`//span[text()[contains(., '%s')]]`, "results sorted by")
@@ -83,13 +87,24 @@ func skyscannerSearchReturn(url string, best *string, cheapest *string, fastest 
 		}),*/
 	}
 }
-func getNewUrlReturn(datefrom *string, dateto *string, origin string, dest string) string {
+func getNewUrlReturn(datefrom *string, dateto *string, origin string, dest string, duration int) string {
 
 	t, _ := time.Parse(shortForm, *datefrom)
 	t = t.Add(time.Hour * 24)
 	*datefrom = t.Format(shortForm)
 
+	t2, _ := time.Parse(shortForm, *dateto)
+	t2 = t2.Add(time.Hour * time.Duration(24*duration))
+	*dateto = t2.Format(shortForm)
+
 	url := fmt.Sprintf(baseUrlReturn, origin, dest, *datefrom, *dateto, currency, adults, children, adults, cabinclass)
 
 	return url
+}
+func initArrayToMove() {
+	firstval := int(daystomove/2) * -1
+	for i := 0; i <= len(movearray); i++ {
+		movearray[i] = firstval + i
+	}
+
 }

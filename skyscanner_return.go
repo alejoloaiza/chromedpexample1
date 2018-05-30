@@ -14,12 +14,15 @@ import (
 const baseUrlReturn = `https://www.skyscanner.net/transport/flights/%s/%s/%s/%s/?currency=%s&adults=%s&children=%s&adultsv2=%s&childrenv2=&infants=0&cabinclass=%s&rtn=1&preferdirects=false&outboundaltsenabled=false&inboundaltsenabled=false&ref=home#results`
 const daystomove = 5
 
+var oscillator int
 var movearray [daystomove]int
 
 func InitCaptureReturn(logpath string, initdate string, enddate string, duration int, origin string, dest string) {
 	var err error
 	var cycle int
 	var best, cheaper, fastest string
+	oscillator = 0
+	initArrayToMove()
 	ctxt, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -93,17 +96,24 @@ func getNewUrlReturn(datefrom *string, dateto *string, origin string, dest strin
 	t = t.Add(time.Hour * 24)
 	*datefrom = t.Format(shortForm)
 
-	t2, _ := time.Parse(shortForm, *dateto)
-	t2 = t2.Add(time.Hour * time.Duration(24*duration))
-	*dateto = t2.Format(shortForm)
-
+FinalDate:
+	if oscillator < daystomove {
+		t2, _ := time.Parse(shortForm, *dateto)
+		t2 = t2.Add(time.Hour * time.Duration(24*duration*movearray[oscillator]))
+		*dateto = t2.Format(shortForm)
+		oscillator++
+	} else {
+		oscillator = 0
+		goto FinalDate
+	}
 	url := fmt.Sprintf(baseUrlReturn, origin, dest, *datefrom, *dateto, currency, adults, children, adults, cabinclass)
 
 	return url
 }
 func initArrayToMove() {
+
 	firstval := int(daystomove/2) * -1
-	for i := 0; i <= len(movearray); i++ {
+	for i := 0; i < len(movearray); i++ {
 		movearray[i] = firstval + i
 	}
 

@@ -38,10 +38,12 @@ func InitCaptureReturn(logpath string, initdate string, enddate string, duration
 	if err != nil {
 		log.Fatal(err)
 	}
-	WriteResults(logpath, "Time;Iteration;Date;Best;Best Time;Cheapest;Cheapest Time;Fastest;Fastest Time")
+	WriteResults(logpath, "Time;Iteration;Initial Date;Return Date;Best;Best Time;Cheapest;Cheapest Time;Fastest;Fastest Time")
 	for initdate != enddate {
 		cycle++
-		var url = getNewUrlReturn(&initdate, &enddate, origin, dest, duration)
+		url, returndate := getNewUrlReturn(&initdate, &enddate, origin, dest, duration)
+		fmt.Println(url)
+
 		err = c.Run(ctxt, skyscannerSearchReturn(url, &best, &cheaper, &fastest))
 		if err != nil {
 			log.Fatal(err)
@@ -49,7 +51,7 @@ func InitCaptureReturn(logpath string, initdate string, enddate string, duration
 		price1, duration1 := SplitPrices(best)
 		price2, duration2 := SplitPrices(cheaper)
 		price3, duration3 := SplitPrices(fastest)
-		newline := fmt.Sprintf("%s;%d;%s;%s;%s;%s;%s;%s;%s", time.Now().Format("02-01-2006 15:04:05"), cycle, initdate, price1, duration1, price2, duration2, price3, duration3)
+		newline := fmt.Sprintf("%s;%d;%s;%s;%s;%s;%s;%s;%s", time.Now().Format("02-01-2006 15:04:05"), cycle, initdate, returndate, price1, duration1, price2, duration2, price3, duration3)
 		WriteResults(logpath, newline)
 
 	}
@@ -90,25 +92,28 @@ func skyscannerSearchReturn(url string, best *string, cheapest *string, fastest 
 		}),*/
 	}
 }
-func getNewUrlReturn(datefrom *string, dateto *string, origin string, dest string, duration int) string {
-
-	t, _ := time.Parse(shortForm, *datefrom)
-	t = t.Add(time.Hour * 24)
-	*datefrom = t.Format(shortForm)
+func getNewUrlReturn(datefrom *string, dateto *string, origin string, dest string, duration int) (string, string) {
+	var t1, t2 time.Time
 
 FinalDate:
 	if oscillator < daystomove {
-		t2, _ := time.Parse(shortForm, *dateto)
-		t2 = t2.Add(time.Hour * time.Duration(24*duration*movearray[oscillator]))
-		*dateto = t2.Format(shortForm)
+		t2, _ = time.Parse(shortForm, *datefrom)
+		t2 = t2.Add(time.Hour * time.Duration(24*duration))
+		t2 = t2.Add(time.Hour * time.Duration(24*movearray[oscillator]))
+		//fmt.Println(duration, movearray[oscillator], t2.Format(shortForm))
+		//*dateto = t2.Format(shortForm)
 		oscillator++
 	} else {
 		oscillator = 0
+		t1, _ = time.Parse(shortForm, *datefrom)
+		t1 = t1.Add(time.Hour * 24)
+		*datefrom = t1.Format(shortForm)
+
 		goto FinalDate
 	}
-	url := fmt.Sprintf(baseUrlReturn, origin, dest, *datefrom, *dateto, currency, adults, children, adults, cabinclass)
+	url := fmt.Sprintf(baseUrlReturn, origin, dest, *datefrom, t2.Format(shortForm), currency, adults, children, adults, cabinclass)
 
-	return url
+	return url, t2.Format(shortForm)
 }
 func initArrayToMove() {
 
